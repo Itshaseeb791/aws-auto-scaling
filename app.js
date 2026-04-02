@@ -143,6 +143,25 @@ app.get('/notes/:id', async (req, res) => {
   }
 });
 
+app.get('/burn', (req, res) => {
+  const duration = parseInt(req.query.duration) || 5000; 
+  const start = Date.now();
+  let result = 0;
+
+  // Heavy CPU calculation
+  while (Date.now() - start < duration) {
+    result += Math.sqrt(Math.random()) * Math.tan(Math.random());
+    result += Math.pow(Math.random(), Math.random());
+  }
+
+  res.json({
+    message: '🔥 CPU burn complete',
+    durationMs: Date.now() - start,
+    result: result,
+    servedBy: os.hostname(),
+  });
+});
+
 // ─── 404 Handler (unknown routes) ────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ error: `Route ${req.method} ${req.path} not found.` });
@@ -169,3 +188,4 @@ process.on('unhandledRejection', (reason) => {
 app.listen(PORT, () => {
   console.log(`🚀 Notepad API running on port ${PORT} | host: ${os.hostname()}`);
 });
+
