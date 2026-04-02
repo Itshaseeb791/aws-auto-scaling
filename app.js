@@ -143,23 +143,34 @@ app.get('/notes/:id', async (req, res) => {
   }
 });
 
+// ─── Non-blocking CPU Burn ────────────────────────────────────────────────────
 app.get('/burn', (req, res) => {
-  const duration = parseInt(req.query.duration) || 5000; 
+  const duration = parseInt(req.query.duration) || 1000;
   const start = Date.now();
   let result = 0;
 
-  // Heavy CPU calculation
-  while (Date.now() - start < duration) {
-    result += Math.sqrt(Math.random()) * Math.tan(Math.random());
-    result += Math.pow(Math.random(), Math.random());
-  }
+  // Use setImmediate to yield to event loop periodically
+  // This lets health checks through while still burning CPU
+  const burn = () => {
+    const chunk = Date.now();
+    while (Date.now() - chunk < 100) {
+      result += Math.sqrt(Math.random()) * Math.tan(Math.random());
+      result += Math.pow(Math.random(), Math.random());
+    }
 
-  res.json({
-    message: '🔥 CPU burn complete',
-    durationMs: Date.now() - start,
-    result: result,
-    servedBy: os.hostname(),
-  });
+    if (Date.now() - start < duration) {
+      setImmediate(burn); // yield to event loop → health checks can pass ✅
+    } else {
+      res.json({
+        message: '🔥 CPU burn complete',
+        durationMs: Date.now() - start,
+        result,
+        servedBy: os.hostname(),
+      });
+    }
+  };
+
+  burn();
 });
 
 // ─── 404 Handler (unknown routes) ────────────────────────────────────────────
